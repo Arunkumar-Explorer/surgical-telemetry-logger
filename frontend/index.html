@@ -1,0 +1,44 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Live Command Center</title>
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+</head><body>
+<nav><a href="index.html" data-page="index" class="active">Command Center</a><a href="bus-analytics.html" data-page="bus">Bus Analytics</a><a href="replay.html" data-page="replay">Replay</a><a href="sql-inspector.html" data-page="sql">SQL Inspector</a><a href="architecture.html" data-page="arch">Architecture</a>
+<span class="pill ok" id="conn">Connected</span><span class="badge" id="scenario">NORMAL</span><span class="pill err" id="estop" style="display:none">ESTOP</span></nav>
+<div class="grid kpi">
+<div class="card"><div>Throughput FPS</div><div class="kpi-val accent-emerald" id="k1">--</div></div>
+<div class="card"><div>P99 Latency ms</div><div class="kpi-val accent-cobalt" id="k2">--</div></div>
+<div class="card"><div>Packet Integrity %</div><div class="kpi-val accent-teal" id="k3">--</div></div>
+<div class="card"><div>Active Buses</div><div class="kpi-val">4</div></div>
+<div class="card"><div>Ring Buffer %</div><div class="kpi-val accent-amber" id="k4">--</div></div>
+<div class="card"><div>Watchdog</div><div class="kpi-val" id="k5">NOMINAL</div></div>
+</div>
+<div style="padding:0 24px 24px">
+<div class="card"><h2>Fault Injection</h2>
+<button onclick="setScenario('NORMAL')">Normal Surgery</button>
+<button onclick="setScenario('CAN_CRC_CORRUPT')">CAN CRC Error</button>
+<button onclick="setScenario('I2C_NACK_STORM')">I2C NACK Storm</button>
+<button onclick="setScenario('LATENCY_SPIKE_20MS')">20ms Jitter Spike</button>
+<button onclick="setScenario('FORCE_OVERLOAD_ESTOP')">Gripper Force Overload</button>
+</div>
+<div class="card"><h2>Latency Waveform</h2><canvas id="chart1"></canvas></div>
+<div class="card"><h2>6-DOF Joint & Gripper Force</h2><canvas id="chart2"></canvas></div>
+</div>
+<script src="assets/telemetry_client.js"></script>
+<script>
+function setScenario(s){ document.getElementById('scenario').textContent=s; }
+const ctx=document.getElementById('chart1').getContext('2d');
+const c1=new Chart(ctx,{type:'line',data:{labels:[],datasets:[{label:'UART',data:[],borderColor:'#2563eb'},{label:'SPI',data:[],borderColor:'#10b981'},{label:'I2C',data:[],borderColor:'#f59e0b'},{label:'CAN',data:[],borderColor:'#ef4444'}]},options:{animation:false}});
+window.TelemetryClient.subscribe(d=>{
+ document.getElementById('k1').textContent=d.kpi.throughput.toFixed(1);
+ document.getElementById('k2').textContent=d.kpi.p99.toFixed(2);
+ document.getElementById('k3').textContent=d.kpi.integrity.toFixed(2);
+ document.getElementById('k4').textContent=d.kpi.ring;
+ document.getElementById('k5').textContent=d.kpi.watchdog;
+ document.getElementById('k5').className='kpi-val '+(d.kpi.watchdog==='ESTOP'?'accent-crimson':'accent-emerald');
+ if(c1.data.labels.length>60){c1.data.labels.shift();c1.data.datasets.forEach(ds=>ds.data.shift());}
+ c1.data.labels.push(new Date().toLocaleTimeString());
+ c1.data.datasets.forEach(ds=>ds.data.push(Math.random()*3));
+ c1.update();
+});
+</script></body></html>

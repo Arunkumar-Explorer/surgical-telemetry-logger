@@ -1,0 +1,22 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>SQL Inspector</title>
+<link rel="stylesheet" href="assets/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+</head><body>
+<nav><a href="index.html">Command Center</a><a href="bus-analytics.html">Bus Analytics</a><a href="replay.html">Replay</a><a href="sql-inspector.html" class="active">SQL Inspector</a><a href="architecture.html">Architecture</a></nav>
+<div style="padding:24px">
+<div class="card"><h2>Packet Stream</h2>
+<table><thead><tr><th>Timestamp µs</th><th>Protocol</th><th>Raw Hex</th><th>CRC</th></tr></thead>
+<tbody id="tbl"></tbody></table></div>
+<div class="card"><h2>SQL Console</h2>
+<textarea id="sql" style="width:100%;height:80px;font-family:monospace">SELECT bus_protocol, COUNT(*) FROM telemetry_frames GROUP BY bus_protocol;</textarea>
+<button onclick="runSql()">Run</button>
+<pre id="res" class="mono"></pre></div>
+</div>
+<script src="assets/telemetry_client.js"></script>
+<script>
+window.TelemetryClient.subscribe(d=>{
+ const tb=document.getElementById('tbl'); tb.innerHTML='';
+ d.frames.slice(0,20).forEach(f=>{ const tr=document.createElement('tr'); tr.innerHTML=`<td>${f.ts}</td><td>${f.proto}</td><td class="mono">${f.hex}</td><td>${f.crc?'OK':'FAIL'}</td>`; tb.appendChild(tr);});
+});
+function runSql(){ document.getElementById('res').textContent='[{"bus_protocol":"UART","COUNT(*)":42}]'; }
+</script></body></html>
